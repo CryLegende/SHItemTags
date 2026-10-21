@@ -1,0 +1,62 @@
+# SHItemTags - Nametag enchanté (remplace ItemTags)
+#
+# Le tag garde le marqueur NBT d'ItemTags (ItemTagType = ITEM_NAME_TAG) :
+# les tags déjà en possession des joueurs restent utilisables.
+# Fonctionnement : clic droit avec le tag -> le tag est consommé -> le joueur écrit le nom dans le chat
+# -> l'item tenu en main à ce moment-là est renommé. Le mot d'annulation (ou une déconnexion) rend le tag.
+
+mot-annulation: annuler
+longueur-max: 45
+mots-interdits:
+  - fuck
+  - bitch
+# Items qui ne peuvent pas être renommés (chèques, bouteilles d'EXP, spawners, têtes...)
+items-interdits:
+  - ENDER_CHEST
+  - NAME_TAG
+  - SPAWNER
+  - PLAYER_HEAD
+  - SKELETON_SKULL
+  - WITHER_SKELETON_SKULL
+  - ZOMBIE_HEAD
+  - CREEPER_HEAD
+  - DRAGON_HEAD
+  - PIGLIN_HEAD
+  - TRIPWIRE_HOOK
+  - NETHER_STAR
+  - EXPERIENCE_BOTTLE
+  - PAPER
+
+tag:
+  materiau: NAME_TAG
+  nom: '&dNametag Enchanté'
+  lore:
+    - '&7'
+    - '&7• &fPermet de renommer un item en'
+    - '&futilisant le code couleur.'
+    - '&7'
+    - '&7• &fCouleurs acceptés :'
+    - '&a&&aa &b&&bb &c&&cc &d&&dd &e&&ee'
+    - '&f&&ff &1&&11 &2&&22 &3&&33 &4&&44'
+    - '&5&&55 &6&&66 &7&&77 &8&&88 &9&&99'
+    - '&7'
+    - '&7&o((&f&oClic droit &7&opour l''utiliser))'
+
+messages:
+  demande: "&r &r\n&7&l« &6&lSH &8&l» &fVeuillez écrire le nom que vous voulez dans le chat."
+  annulation-info: '&7&l« &6&lSH &8&l» &7Tapez &b%cancel_word% &7pour annuler.'
+  annule: '&7&l« &c&lSH &8&l» &cVous avez annulé le changement de nom pour cet item.'
+  deja-en-cours: '&7&l« &c&lSH &8&l» &cVeuillez terminer d''utiliser votre Nametag actuel avant d''en utiliser un autre.'
+  item-interdit: '&7&l« &c&lSH &8&l» &cVous ne pouvez pas renommer cet item.'
+  mot-interdit: '&7&l« &c&lSH &8&l» &cVous ne pouvez pas utiliser ce nom.'
+  trop-long: '&7&l« &c&lSH &8&l» &cVotre nom est trop long, impossible de renommer votre item.'
+  air: '&7&l« &c&lSH &8&l» &cImpossible de renommer de l''air :('
+  renomme: '&7&l« &a&lSH &8&l» &7Item renommé en %name%&7.'
+  pas-un-nombre: '&7&l« &c&lSH &8&l» &4%value% &cn''est pas un nombre valide.'
+  joueur-hors-ligne: '&7&l« &c&lSH &8&l» &4%value% &cn''est pas en ligne.'
+  type-invalide: '&7&l« &c&lSH &8&l» &cType de tag inconnu (seul &eitemnametag &cexiste).'
+  pas-de-permission: '&7&l« &f&lSH &8&l» &fCommande inconnue, essayez autre chose.'
+  donne: '&7&l« &a&lSH &8&l» &7%amount% Nametag(s) donné(s) à &e%player%&7.'
+  donne-a-tous: '&7&l« &a&lSH &8&l» &7%amount% Nametag(s) donné(s) à tous les joueurs.'
+  recharge: '&7&l« &a&lSH &8&l» &7Configuration &arechargée&7.'
+  usage: '&7&l« &e&lSH &8&l» &e/shitemtags give <joueur> itemnametag [nombre] &7| &e/shitemtags giveall itemnametag [nombre] &7| &e/shitemtags reload'

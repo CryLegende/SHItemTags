@@ -1,0 +1,17 @@
+name: SHItemTags
+version: '${project.version}'
+main: org.Cry_Legende.sHItemTags.SHItemTags
+api-version: '1.21'
+author: Cry_Legende
+description: Nametags enchantés pour renommer un item en couleur (remplace ItemTags, compatible avec ses tags)
+depend: [NBTAPI]
+
+commands:
+  shitemtags:
+    description: Donne des Nametags enchantés.
+    usage: /shitemtags <give|giveall|reload>
+
+permissions:
+  itemtags.command.give:
+    description: /itemtags give, giveall et reload
+    default: op
