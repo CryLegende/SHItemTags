@@ -24,15 +24,24 @@ Utilisé sur : **Opale**.
 
 ## Commandes
 
-| Commande | Alias | Description | Permission |
-|---|---|---|---|
-| `/shitemtags` | — | Donne des Nametags enchantés. | — |
+Commande `/shitemtags`, utilisable depuis la console (c'est ainsi que SHCrates donne un tag).
+
+| Commande | Description | Permission |
+|---|---|---|
+| `/shitemtags give <joueur> itemnametag [nombre]` | Donne des Nametags à un joueur. | `shitemtags.admin.give` |
+| `/shitemtags giveall itemnametag [nombre]` | Donne des Nametags à tous les joueurs connectés. | `shitemtags.admin.giveall` |
+| `/shitemtags reload` | Recharge `config.yml` et `messages.yml`. Une erreur de syntaxe annule le rechargement. | `shitemtags.admin.reload` |
+
+Utiliser un Nametag (clic droit) ne demande aucune permission.
 
 ## Permissions
 
 | Permission | Description | Par défaut |
 |---|---|---|
-| `itemtags.command.give` | /itemtags give, giveall et reload | `op` |
+| `shitemtags.admin` | Toute l'administration (parent des permissions ci-dessous). | `op` |
+| `shitemtags.admin.give` | `give`. | `op` |
+| `shitemtags.admin.giveall` | `giveall`. | `op` |
+| `shitemtags.admin.reload` | `reload`. | `op` |
 
 ## Configuration
 
@@ -40,7 +49,8 @@ Fichiers par défaut repris du serveur (secrets remplacés par `CHANGE_ME`). Cli
 
 <pre>
 plugins/SHItemTags/
-└── <a href="src/main/resources/config.yml">config.yml</a>
+├── <a href="src/main/resources/config.yml">config.yml</a>
+└── <a href="src/main/resources/messages.yml">messages.yml</a>
 </pre>
 
 ## Compilation

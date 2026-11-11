@@ -12,6 +12,19 @@ commands:
     usage: /shitemtags <give|giveall|reload>
 
 permissions:
-  itemtags.command.give:
-    description: /itemtags give, giveall et reload
+  shitemtags.admin:
+    description: Toute l'administration de SHItemTags.
+    default: op
+    children:
+      shitemtags.admin.give: true
+      shitemtags.admin.giveall: true
+      shitemtags.admin.reload: true
+  shitemtags.admin.give:
+    description: Donner des Nametags à un joueur (/shitemtags give).
+    default: op
+  shitemtags.admin.giveall:
+    description: Donner des Nametags à tous les joueurs connectés (/shitemtags giveall).
+    default: op
+  shitemtags.admin.reload:
+    description: Recharger la configuration (/shitemtags reload).
     default: op

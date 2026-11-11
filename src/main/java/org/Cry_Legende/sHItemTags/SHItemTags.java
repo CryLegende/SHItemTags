@@ -2,7 +2,6 @@ package org.Cry_Legende.sHItemTags;
 
 import de.tr7zw.nbtapi.NBT;
 import io.papermc.paper.event.player.AsyncChatEvent;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -10,6 +9,9 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -23,6 +25,11 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -37,15 +44,26 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
     // Marqueur NBT d'ItemTags : les anciens tags restent reconnus
     private static final String NBT_KEY = "ItemTagType";
     private static final String NAME_TAG = "ITEM_NAME_TAG";
-    private static final String PERMISSION = "itemtags.command.give";
+    private static final String PERM_GIVE = "shitemtags.admin.give";
+    private static final String PERM_GIVEALL = "shitemtags.admin.giveall";
+    private static final String PERM_RELOAD = "shitemtags.admin.reload";
     private static final Pattern HEX = Pattern.compile("&#([0-9a-fA-F]{6})");
 
     // Joueurs qui ont utilisé un tag et doivent écrire le nom (le chat est asynchrone)
     private final Set<UUID> renaming = ConcurrentHashMap.newKeySet();
 
+    private volatile YamlConfiguration messages = new YamlConfiguration();
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        migrateMessages();
+        try {
+            messages = readMessages();
+        } catch (IOException | InvalidConfigurationException e) {
+            getLogger().warning("messages.yml illisible, textes par défaut utilisés : " + firstLine(e));
+            messages = defaultMessages();
+        }
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("shitemtags").setExecutor(this);
         getCommand("shitemtags").setTabCompleter(this);
@@ -120,7 +138,9 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
             return;
         }
         event.setCancelled(true);
-        String text = PlainTextComponentSerializer.plainText().serialize(event.message()).trim();
+        // signedMessage() : le texte exactement comme le client l'a envoyé. message() et originalMessage()
+        // sont déjà passés par la décoration du chat des autres plugins, qui retire les codes & du texte d'un joueur.
+        String text = event.signedMessage().message().trim();
         Bukkit.getScheduler().runTask(this, () -> rename(player, text));
     }
 
@@ -168,24 +188,44 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
         }
     }
 
-    // ------------------------------------------------------------------ commande (SHCrates : itemtags give %player_name% itemnametag 1)
+    // ------------------------------------------------------------------ commande (SHCrates : shitemtags give %player_name% itemnametag 1)
+
+    /** Sous-commandes que l'expéditeur a le droit d'utiliser, avec leur forme d'usage. */
+    private List<String> allowedSubcommands(CommandSender sender) {
+        List<String> allowed = new ArrayList<>();
+        if (sender.hasPermission(PERM_GIVE)) {
+            allowed.add("give <joueur> itemnametag [nombre]");
+        }
+        if (sender.hasPermission(PERM_GIVEALL)) {
+            allowed.add("giveall itemnametag [nombre]");
+        }
+        if (sender.hasPermission(PERM_RELOAD)) {
+            allowed.add("reload");
+        }
+        return allowed;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission(PERMISSION)) {
+        List<String> allowed = allowedSubcommands(sender);
+        if (allowed.isEmpty()) {
             msg(sender, "pas-de-permission");
             return true;
         }
         String sub = args.length == 0 ? "" : args[0].toLowerCase(Locale.ROOT);
-        if (sub.equals("reload")) {
-            reloadConfig();
-            msg(sender, "recharge");
+        if (sub.equals("reload") && sender.hasPermission(PERM_RELOAD)) {
+            String[] error = reload();
+            if (error != null) {
+                msg(sender, "reload-failed", "%file%", error[0], "%error%", error[1]);
+            } else {
+                msg(sender, "recharge");
+            }
             return true;
         }
         boolean all = sub.equals("giveall");
         int typeIndex = all ? 1 : 2;
-        if ((!all && !sub.equals("give")) || args.length <= typeIndex) {
-            msg(sender, "usage");
+        if ((!all && !sub.equals("give")) || !sender.hasPermission(all ? PERM_GIVEALL : PERM_GIVE) || args.length <= typeIndex) {
+            msg(sender, "usage", "%subs%", String.join(" &7|&e /shitemtags ", allowed));
             return true;
         }
         if (!args[typeIndex].equalsIgnoreCase("itemnametag") && !args[typeIndex].equalsIgnoreCase(NAME_TAG)) {
@@ -222,17 +262,104 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (!sender.hasPermission(PERMISSION)) {
-            return List.of();
-        }
         if (args.length == 1) {
-            return StringUtil.copyPartialMatches(args[0], List.of("give", "giveall", "reload"), new ArrayList<>());
+            List<String> subs = new ArrayList<>();
+            if (sender.hasPermission(PERM_GIVE)) {
+                subs.add("give");
+            }
+            if (sender.hasPermission(PERM_GIVEALL)) {
+                subs.add("giveall");
+            }
+            if (sender.hasPermission(PERM_RELOAD)) {
+                subs.add("reload");
+            }
+            return StringUtil.copyPartialMatches(args[0], subs, new ArrayList<>());
         }
         boolean all = args[0].equalsIgnoreCase("giveall");
+        if (!(all ? sender.hasPermission(PERM_GIVEALL) : args[0].equalsIgnoreCase("give") && sender.hasPermission(PERM_GIVE))) {
+            return List.of();
+        }
         if ((all && args.length == 2) || (!all && args.length == 3)) {
             return StringUtil.copyPartialMatches(args[args.length - 1], List.of("itemnametag"), new ArrayList<>());
         }
         return !all && args.length == 2 ? null : List.of();
+    }
+
+    // ------------------------------------------------------------------ configuration et messages
+
+    /**
+     * Les textes étaient dans la section messages: de config.yml. Au premier démarrage sans messages.yml, le fichier
+     * est créé avec les textes de ce serveur, complétés par les valeurs du jar. La section de config.yml n'est plus
+     * lue ensuite. usage change de forme (sous-commandes permises) : il vient toujours du jar.
+     */
+    private void migrateMessages() {
+        File file = new File(getDataFolder(), "messages.yml");
+        if (file.exists()) {
+            return;
+        }
+        YamlConfiguration created = defaultMessages();
+        ConfigurationSection old = getConfig().getConfigurationSection("messages");
+        if (old != null) {
+            for (String key : old.getKeys(false)) {
+                if (!key.equals("usage") && old.isString(key)) {
+                    created.set(key, old.getString(key));
+                }
+            }
+        }
+        try {
+            getDataFolder().mkdirs();
+            created.save(file);
+        } catch (IOException e) {
+            getLogger().warning("messages.yml non créé : " + e.getMessage());
+        }
+    }
+
+    private YamlConfiguration defaultMessages() {
+        try (InputStream in = getResource("messages.yml")) {
+            if (in != null) {
+                return YamlConfiguration.loadConfiguration(new InputStreamReader(in, StandardCharsets.UTF_8));
+            }
+        } catch (IOException e) {
+            getLogger().warning("messages.yml du jar illisible : " + e.getMessage());
+        }
+        return new YamlConfiguration();
+    }
+
+    /** messages.yml du serveur ; les clés absentes retombent sur le texte du jar. */
+    private YamlConfiguration readMessages() throws IOException, InvalidConfigurationException {
+        YamlConfiguration yaml = new YamlConfiguration();
+        yaml.load(new File(getDataFolder(), "messages.yml"));
+        yaml.setDefaults(defaultMessages());
+        return yaml;
+    }
+
+    private static String firstLine(Exception e) {
+        String text = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+        int end = text.indexOf('\n');
+        return (end < 0 ? text : text.substring(0, end)).trim();
+    }
+
+    /**
+     * Relit config.yml et messages.yml. Si l'un des deux a une erreur de syntaxe, rien n'est appliqué : renvoie le
+     * fichier et la première ligne de l'erreur, null quand tout est rechargé. Les joueurs qui écrivent un nom ne sont
+     * pas touchés.
+     */
+    private String[] reload() {
+        File configFile = new File(getDataFolder(), "config.yml");
+        try {
+            new YamlConfiguration().load(configFile);
+        } catch (IOException | InvalidConfigurationException e) {
+            return new String[]{configFile.getName(), firstLine(e)};
+        }
+        YamlConfiguration newMessages;
+        try {
+            newMessages = readMessages();
+        } catch (IOException | InvalidConfigurationException e) {
+            return new String[]{"messages.yml", firstLine(e)};
+        }
+        reloadConfig();
+        messages = newMessages;
+        return null;
     }
 
     // ------------------------------------------------------------------ utilitaires
@@ -244,7 +371,11 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
     }
 
     private void msg(CommandSender sender, String key, String... replacements) {
-        String message = getConfig().getString("messages." + key, "");
+        // La forme à un argument de getString lit aussi les valeurs par défaut du jar
+        String message = messages.getString(key);
+        if (message == null) {
+            message = "";
+        }
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             message = message.replace(replacements[i], replacements[i + 1]);
         }
