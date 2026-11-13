@@ -25,22 +25,11 @@ longueur-max: 45
 mots-interdits:
   - fuck
   - bitch
-# Items qui ne peuvent pas être renommés (chèques, bouteilles d'EXP, spawners, têtes...)
+# Items qui ne peuvent pas être renommés (spawners, têtes...)
 items-interdits:
-  - ENDER_CHEST
   - NAME_TAG
   - SPAWNER
   - PLAYER_HEAD
-  - SKELETON_SKULL
-  - WITHER_SKELETON_SKULL
-  - ZOMBIE_HEAD
-  - CREEPER_HEAD
-  - DRAGON_HEAD
-  - PIGLIN_HEAD
-  - TRIPWIRE_HOOK
-  - NETHER_STAR
-  - EXPERIENCE_BOTTLE
-  - PAPER
 
 tag:
   materiau: NAME_TAG
