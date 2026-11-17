@@ -18,9 +18,21 @@ Nametags enchantés pour renommer un item en couleur (remplace ItemTags, compati
 
 Utilisé sur : **Opale**.
 
+## Fonctionnement
+
+1. Clic droit avec le Nametag : un menu s'ouvre.
+2. Le joueur pose l'item à renommer dans la case du centre. La vitre à droite devient **verte** (renommable) ou **rouge** (item interdit : `items-interdits`, Nametag).
+3. Clic sur la vitre verte : l'item revient dans l'inventaire et un dialogue demande le nom (pré-rempli avec le nom actuel).
+   - **Aperçu** montre l'item avec le nouveau nom et dit si le nom sera refusé (mot interdit, trop long), sans rien utiliser.
+   - **Renommer** applique le nom et retire un Nametag, ou rouvre le dialogue avec la raison du refus.
+   - **Annuler** (ou Échap) ferme, rien n'est utilisé.
+
+Le Nametag n'est retiré qu'à la réussite du renommage. Fermer le menu rend l'item posé. Les clients sans dialogues (avant 1.21.6, lus avec ViaVersion) écrivent le nom dans le chat après avoir validé l'item.
+
 ## Dépendances
 
 - Obligatoires : `NBTAPI`
+- Facultatives : `ViaVersion` (repérer les clients sans dialogues)
 
 ## Commandes
 

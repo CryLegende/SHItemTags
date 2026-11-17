@@ -1,7 +1,6 @@
 package org.Cry_Legende.sHItemTags;
 
 import de.tr7zw.nbtapi.NBT;
-import io.papermc.paper.event.player.AsyncChatEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -11,15 +10,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -31,15 +24,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor, TabCompleter {
+public class SHItemTags extends JavaPlugin implements CommandExecutor, TabCompleter {
 
     // Marqueur NBT d'ItemTags : les anciens tags restent reconnus
     private static final String NBT_KEY = "ItemTagType";
@@ -49,10 +41,15 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
     private static final String PERM_RELOAD = "shitemtags.admin.reload";
     private static final Pattern HEX = Pattern.compile("&#([0-9a-fA-F]{6})");
 
-    // Joueurs qui ont utilisé un tag et doivent écrire le nom (le chat est asynchrone)
-    private final Set<UUID> renaming = ConcurrentHashMap.newKeySet();
+    /** Réglages lus une fois par chargement (le clic droit et le contrôle d'un nom ne relisent pas la config). */
+    record Settings(String cancelWord, int maxLength, List<String> bannedWords, Set<Material> bannedItems,
+                    Material tagMaterial, boolean dialogs, int minProtocol) {
+    }
 
     private volatile YamlConfiguration messages = new YamlConfiguration();
+    private volatile Settings settings;
+    private DialogBlindness blindness;
+    private RenameFlow flow;
 
     @Override
     public void onEnable() {
@@ -64,28 +61,58 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
             getLogger().warning("messages.yml illisible, textes par défaut utilisés : " + firstLine(e));
             messages = defaultMessages();
         }
-        getServer().getPluginManager().registerEvents(this, this);
+        settings = readSettings(getConfig());
+        blindness = new DialogBlindness(this, getConfig().getBoolean("aveugler-pendant-dialogues", true));
+        flow = new RenameFlow(this, blindness);
+        getServer().getPluginManager().registerEvents(flow, this);
         getCommand("shitemtags").setExecutor(this);
         getCommand("shitemtags").setTabCompleter(this);
     }
 
     @Override
     public void onDisable() {
-        // Rechargement ou arrêt : on rend les tags en cours d'utilisation
-        for (UUID uuid : renaming) {
-            Player player = Bukkit.getPlayer(uuid);
-            if (player != null) {
-                give(player, createTag(1));
+        // Le tag n'est retiré qu'à la réussite d'un renommage : rien à rendre aux joueurs en cours
+        if (flow != null) {
+            flow.shutdown();
+        }
+        if (blindness != null) {
+            blindness.shutdown();
+        }
+    }
+
+    Settings settings() {
+        return settings;
+    }
+
+    private Settings readSettings(FileConfiguration config) {
+        Set<Material> items = EnumSet.noneOf(Material.class);
+        for (String name : config.getStringList("items-interdits")) {
+            Material material = Material.matchMaterial(name);
+            if (material == null) {
+                getLogger().warning("items-interdits : matériau inconnu " + name);
+            } else {
+                items.add(material);
             }
         }
-        renaming.clear();
+        List<String> words = config.getStringList("mots-interdits").stream()
+            .map(w -> w.toLowerCase(Locale.ROOT).strip())
+            .filter(w -> !w.isEmpty())
+            .toList();
+        Material tag = Material.matchMaterial(config.getString("tag.materiau", "NAME_TAG"));
+        return new Settings(
+            config.getString("mot-annulation", "annuler"),
+            config.getInt("longueur-max", 45),
+            words,
+            items,
+            tag == null ? Material.NAME_TAG : tag,
+            config.getBoolean("dialogues.actif", true),
+            config.getInt("dialogues.min-protocol", 771));
     }
 
     // ------------------------------------------------------------------ tag
 
     private ItemStack createTag(int amount) {
-        Material material = Material.matchMaterial(getConfig().getString("tag.materiau", "NAME_TAG"));
-        ItemStack tag = new ItemStack(material == null ? Material.NAME_TAG : material, Math.max(1, amount));
+        ItemStack tag = new ItemStack(settings.tagMaterial(), Math.max(1, amount));
         ItemMeta meta = tag.getItemMeta();
         meta.setDisplayName(color(getConfig().getString("tag.nom", "")));
         meta.setLore(getConfig().getStringList("tag.lore").stream().map(SHItemTags::color).toList());
@@ -96,96 +123,14 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
         return tag;
     }
 
-    private static boolean isTag(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+    boolean isTag(ItemStack item) {
+        // Le matériau d'abord : la lecture NBT n'est faite que pour un Nametag (ceux d'ItemTags sont des NAME_TAG)
+        if (item == null || (item.getType() != Material.NAME_TAG && item.getType() != settings.tagMaterial()) || !item.hasItemMeta()) {
             return false;
         }
         return NBT.get(item, nbt -> {
             return NAME_TAG.equals(nbt.getString(NBT_KEY));
         });
-    }
-
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onUseTag(PlayerInteractEvent event) {
-        if (event.getHand() != EquipmentSlot.HAND
-            || (event.getAction() != Action.RIGHT_CLICK_AIR && event.getAction() != Action.RIGHT_CLICK_BLOCK)
-            || !isTag(event.getItem())) {
-            return;
-        }
-        event.setCancelled(true);
-        Player player = event.getPlayer();
-        if (renaming.contains(player.getUniqueId())) {
-            msg(player, "deja-en-cours");
-            return;
-        }
-        // Comme ItemTags : le tag est consommé tout de suite, rendu en cas d'annulation
-        ItemStack hand = player.getInventory().getItemInMainHand();
-        if (hand.getAmount() > 1) {
-            hand.setAmount(hand.getAmount() - 1);
-        } else {
-            player.getInventory().setItemInMainHand(null);
-        }
-        renaming.add(player.getUniqueId());
-        msg(player, "demande");
-        msg(player, "annulation-info", "%cancel_word%", getConfig().getString("mot-annulation", "annuler"));
-    }
-
-    // LOWEST : le nom tapé ne doit jamais partir dans le chat public
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onChat(AsyncChatEvent event) {
-        Player player = event.getPlayer();
-        if (!renaming.contains(player.getUniqueId())) {
-            return;
-        }
-        event.setCancelled(true);
-        // signedMessage() : le texte exactement comme le client l'a envoyé. message() et originalMessage()
-        // sont déjà passés par la décoration du chat des autres plugins, qui retire les codes & du texte d'un joueur.
-        String text = event.signedMessage().message().trim();
-        Bukkit.getScheduler().runTask(this, () -> rename(player, text));
-    }
-
-    private void rename(Player player, String text) {
-        if (!player.isOnline() || !renaming.contains(player.getUniqueId())) {
-            return;
-        }
-        if (text.equalsIgnoreCase(getConfig().getString("mot-annulation", "annuler"))) {
-            renaming.remove(player.getUniqueId());
-            give(player, createTag(1));
-            msg(player, "annule");
-            return;
-        }
-        // En cas d'erreur le joueur reste en attente et peut réessayer (ou annuler)
-        ItemStack item = player.getInventory().getItemInMainHand();
-        if (item.getType().isAir()) {
-            msg(player, "air");
-            return;
-        }
-        if (getConfig().getStringList("items-interdits").stream().anyMatch(m -> m.equalsIgnoreCase(item.getType().name()))) {
-            msg(player, "item-interdit");
-            return;
-        }
-        String lower = ChatColor.stripColor(color(text)).toLowerCase(Locale.ROOT);
-        if (getConfig().getStringList("mots-interdits").stream().anyMatch(w -> lower.contains(w.toLowerCase(Locale.ROOT)))) {
-            msg(player, "mot-interdit");
-            return;
-        }
-        String name = color(text);
-        if (name.length() > getConfig().getInt("longueur-max", 45)) {
-            msg(player, "trop-long");
-            return;
-        }
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(name);
-        item.setItemMeta(meta);
-        renaming.remove(player.getUniqueId());
-        msg(player, "renomme", "%name%", name);
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        if (renaming.remove(event.getPlayer().getUniqueId())) {
-            give(event.getPlayer(), createTag(1));
-        }
     }
 
     // ------------------------------------------------------------------ commande (SHCrates : shitemtags give %player_name% itemnametag 1)
@@ -341,8 +286,7 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
 
     /**
      * Relit config.yml et messages.yml. Si l'un des deux a une erreur de syntaxe, rien n'est appliqué : renvoie le
-     * fichier et la première ligne de l'erreur, null quand tout est rechargé. Les joueurs qui écrivent un nom ne sont
-     * pas touchés.
+     * fichier et la première ligne de l'erreur, null quand tout est rechargé. Un dialogue déjà ouvert garde son item.
      */
     private String[] reload() {
         File configFile = new File(getDataFolder(), "config.yml");
@@ -359,22 +303,39 @@ public class SHItemTags extends JavaPlugin implements Listener, CommandExecutor,
         }
         reloadConfig();
         messages = newMessages;
+        settings = readSettings(getConfig());
+        blindness.setEnabled(getConfig().getBoolean("aveugler-pendant-dialogues", true));
         return null;
     }
 
     // ------------------------------------------------------------------ utilitaires
 
-    private void give(Player player, ItemStack item) {
+    void give(Player player, ItemStack item) {
         for (ItemStack left : player.getInventory().addItem(item).values()) {
             player.getWorld().dropItem(player.getLocation(), left);
         }
     }
 
-    private void msg(CommandSender sender, String key, String... replacements) {
+    /** Texte brut d'un message (codes & non traduits), vide s'il manque. */
+    String raw(String key) {
         // La forme à un argument de getString lit aussi les valeurs par défaut du jar
         String message = messages.getString(key);
-        if (message == null) {
-            message = "";
+        return message == null ? "" : message;
+    }
+
+    /** Message sur plusieurs lignes : liste YAML ou texte avec \n. */
+    List<String> rawList(String key) {
+        if (messages.isList(key)) {
+            return messages.getStringList(key);
+        }
+        String message = raw(key);
+        return message.isEmpty() ? List.of() : List.of(message.split("\n"));
+    }
+
+    void msg(CommandSender sender, String key, String... replacements) {
+        String message = raw(key);
+        if (message.isEmpty()) {
+            return;
         }
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             message = message.replace(replacements[i], replacements[i + 1]);

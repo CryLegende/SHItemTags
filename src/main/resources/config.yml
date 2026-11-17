@@ -2,8 +2,11 @@
 #
 # Le tag garde le marqueur NBT d'ItemTags (ItemTagType = ITEM_NAME_TAG) :
 # les tags déjà en possession des joueurs restent utilisables.
-# Fonctionnement : clic droit avec le tag -> le tag est consommé -> le joueur écrit le nom dans le chat
-# -> l'item tenu en main à ce moment-là est renommé. Le mot d'annulation (ou une déconnexion) rend le tag.
+# Fonctionnement : clic droit avec le tag -> un menu s'ouvre, le joueur pose l'item au centre (vitre verte :
+# renommable, rouge : item interdit) et clique la vitre verte -> un dialogue demande le nom. « Aperçu » montre l'item renommé et dit si le nom sera refusé (mot interdit,
+# trop long), « Renommer » applique, « Annuler » (ou Échap) ferme. Un Nametag n'est retiré qu'à la réussite.
+# Clients sans dialogues (avant 1.21.6) : après le choix de l'item, le nom s'écrit dans le chat
+# (mot d'annulation pour abandonner).
 # Les textes sont dans messages.yml.
 #
 # Commandes (console comprise) :
@@ -20,7 +23,9 @@
 #
 # Utiliser un Nametag (clic droit) ne demande aucune permission.
 
+# Mot à écrire dans le chat pour abandonner (clients sans dialogues)
 mot-annulation: annuler
+# Longueur maximale du nom, codes couleur compris (&a compte 2, &#rrggbb compte 14)
 longueur-max: 45
 mots-interdits:
   - fuck
@@ -30,6 +35,15 @@ items-interdits:
   - NAME_TAG
   - SPAWNER
   - PLAYER_HEAD
+
+dialogues:
+  # false : tout le monde écrit le nom dans le chat
+  actif: true
+  # Version de protocole à partir de laquelle un client reçoit le dialogue (771 = 1.21.6, lu avec ViaVersion)
+  min-protocol: 771
+# Effet Cécité tant que le dialogue est affiché : le texte se lit sur fond noir. Retiré dès que le joueur
+# clique un bouton (ou Échap), sinon dès qu'il tourne la caméra, se déplace ou ouvre un inventaire.
+aveugler-pendant-dialogues: true
 
 tag:
   materiau: NAME_TAG

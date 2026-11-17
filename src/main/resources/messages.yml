@@ -2,14 +2,66 @@
 #
 # Variables entre %...% selon le message. Codes couleur & et couleurs hexadécimales &#rrggbb. \n pour un retour à la ligne.
 
-demande: "&r &r\n&7&l« &6&lSH &8&l» &fVeuillez écrire le nom que vous voulez dans le chat."
+# ---- Menu de pose (clic droit avec le Nametag) : l'item se pose au centre, la vitre valide
+menu:
+  titre: '&8Renommer un item'
+  info-nom: '&dNametag Enchanté'
+  info-lore:
+    - '&7Pose l''item à renommer dans'
+    - '&7la case du centre, puis clique'
+    - '&7sur la &avitre verte&7.'
+  # Vitre sans item posé
+  vitre-vide:
+    nom: '&7Pose un item au centre'
+    lore: []
+  # Item renommable : clic = dialogue du nom
+  vitre-valider:
+    nom: '&a&lValider'
+    lore:
+      - '&7Choisir le nouveau nom'
+  # Item interdit (items-interdits, Nametag)
+  vitre-refus:
+    nom: '&c✖ Cet item ne peut pas être renommé'
+    lore: []
+  inventaire-plein: '&cLibère une case de ton inventaire pour continuer.'
+
+# ---- Dialogue du nom
+dialogue:
+  # Le titre est la première ligne du corps (convention SkyHand)
+  titre:
+    - '&7&l« &6&lSkyHand &8&l»'
+    - '&fRenommer un item'
+  champ: '&7Nouveau nom'
+  # Sous l'aperçu, avant le premier « Aperçu »
+  aide: '&7Écris le nom, puis &eAperçu &7pour voir le résultat.'
+  # Résultat d'un « Aperçu » ou d'un « Renommer » refusé
+  accepte: '&a✔ Nom accepté, clique sur Renommer.'
+  vide: '&c✖ Écris un nom dans le champ.'
+  mot-interdit: '&c✖ Refusé : ce nom contient un mot interdit.'
+  # %length% : longueur du nom, %max% : longueur-max
+  trop-long: '&c✖ Refusé : nom trop long (%length%/%max%, codes couleur compris).'
+  disparu: '&c✖ L''item n''est plus à sa place dans ton inventaire.'
+  plus-de-tag: '&c✖ Tu n''as plus de Nametag dans ton inventaire.'
+  couleurs:
+    - '&a&&aa &b&&bb &c&&cc &d&&dd &e&&ee &f&&ff &1&&11 &2&&22'
+    - '&3&&33 &4&&44 &5&&55 &6&&66 &7&&77 &8&&88 &9&&99 &7&#rrggbb'
+  bouton-renommer: '&a&lRenommer'
+  bouton-renommer-info: '&7Utilise 1 Nametag'
+  bouton-apercu: '&eAperçu'
+  bouton-apercu-info: '&7Montre l''item avec ce nom, sans rien utiliser'
+  bouton-annuler: '&7Annuler'
+
+# ---- Chat (clients sans dialogues) et messages communs
+demande: "&r &r\n&7&l« &6&lSH &8&l» &fÉcris le nouveau nom de l'item dans le chat."
 annulation-info: '&7&l« &6&lSH &8&l» &7Tapez &b%cancel_word% &7pour annuler.'
-annule: '&7&l« &c&lSH &8&l» &cVous avez annulé le changement de nom pour cet item.'
-deja-en-cours: '&7&l« &c&lSH &8&l» &cVeuillez terminer d''utiliser votre Nametag actuel avant d''en utiliser un autre.'
-item-interdit: '&7&l« &c&lSH &8&l» &cVous ne pouvez pas renommer cet item.'
+annule: '&7&l« &c&lSH &8&l» &cRenommage annulé, ton Nametag n''a pas été utilisé.'
+deja-en-cours: '&7&l« &c&lSH &8&l» &cÉcris d''abord le nom dans le chat, ou &b%cancel_word% &cpour annuler.'
 mot-interdit: '&7&l« &c&lSH &8&l» &cVous ne pouvez pas utiliser ce nom.'
-trop-long: '&7&l« &c&lSH &8&l» &cVotre nom est trop long, impossible de renommer votre item.'
-air: '&7&l« &c&lSH &8&l» &cImpossible de renommer de l''air :('
+trop-long: '&7&l« &c&lSH &8&l» &cNom trop long (%length%/%max%, codes couleur compris).'
+vide: '&7&l« &c&lSH &8&l» &cÉcris un nom.'
+disparu: '&7&l« &c&lSH &8&l» &cL''item n''est plus à sa place dans ton inventaire, renommage annulé.'
+plus-de-tag: '&7&l« &c&lSH &8&l» &cTu n''as plus de Nametag dans ton inventaire.'
+erreur-dialogue: '&7&l« &c&lSH &8&l» &cImpossible d''afficher le dialogue, réessaie.'
 renomme: '&7&l« &a&lSH &8&l» &7Item renommé en %name%&7.'
 pas-un-nombre: '&7&l« &c&lSH &8&l» &4%value% &cn''est pas un nombre valide.'
 joueur-hors-ligne: '&7&l« &c&lSH &8&l» &4%value% &cn''est pas en ligne.'

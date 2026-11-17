@@ -6,7 +6,7 @@
 
     <groupId>org.Cry_Legende</groupId>
     <artifactId>SHItemTags</artifactId>
-    <version>1.1</version>
+    <version>1.2</version>
     <packaging>jar</packaging>
 
     <name>SHItemTags</name>
@@ -59,6 +59,10 @@
             <id>codemc-repo</id>
             <url>https://repo.codemc.io/repository/maven-public/</url>
         </repository>
+        <repository>
+            <id>viaversion-repo</id>
+            <url>https://repo.viaversion.com</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -72,6 +76,13 @@
             <groupId>de.tr7zw</groupId>
             <artifactId>item-nbt-api-plugin</artifactId>
             <version>2.16.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- ViaVersion est facultatif : seule la classe ViaSupport s'en sert -->
+        <dependency>
+            <groupId>com.viaversion</groupId>
+            <artifactId>viaversion-api</artifactId>
+            <version>5.12.1</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
