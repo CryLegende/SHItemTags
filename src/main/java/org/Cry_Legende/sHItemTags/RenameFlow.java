@@ -481,10 +481,33 @@ final class RenameFlow implements Listener {
         if (banned != null) {
             return new Verdict(name, "mot-interdit", name.length(), banned);
         }
+        // copie d'un texte du serveur ([money], [bank]...) ou d'un objet spécial, montrée ensuite avec [i]
+        String imitated = reservedChar(plain, settings.reservedChars());
+        if (imitated == null) {
+            imitated = settings.imitations().find(plain);
+        }
+        if (imitated != null) {
+            return new Verdict(name, "imitation", name.length(), imitated);
+        }
         if (name.length() > settings.maxLength()) {
             return new Verdict(name, "trop-long", name.length());
         }
         return new Verdict(name, null, name.length());
+    }
+
+    /** Premier caractère réservé présent dans le nom, null s'il n'y en a pas. */
+    private static String reservedChar(String plain, String reserved) {
+        if (reserved.isEmpty()) {
+            return null;
+        }
+        for (int i = 0; i < plain.length(); ) {
+            int cp = plain.codePointAt(i);
+            if (reserved.indexOf(cp) >= 0) {
+                return new String(Character.toChars(cp));
+            }
+            i += Character.charCount(cp);
+        }
+        return null;
     }
 
     /** Retire un Nametag de l'inventaire, de préférence celui en main. Faux s'il n'y en a plus. */

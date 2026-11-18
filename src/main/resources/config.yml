@@ -171,6 +171,67 @@ mots-interdits:
     - cul sec
     - cul de poule
     - chili con carne
+# Noms qui imitent un texte du serveur ou un objet spécial : un item renommé « SHCoins: 1 000 000 000 ⛁ » ou
+# « Clé Légendaire » puis montré avec [i] ferait croire à une fortune ou à un objet qu'on n'a pas. Mêmes règles que
+# mots-interdits (normalisation, mots entiers, morceaux, exceptions), avec un message de refus à part.
+imitations:
+  # Caractères réservés : le cadre » « des textes d'InteractiveChat ([money], [bank]...) et leurs symboles
+  caracteres: '»«⛁☀⭐❂❄'
+  # Textes affichés par [money], [tokens], [jobspoints], [exp]... et types d'objets qui ont de la valeur
+  mots:
+    - token
+    - tokens
+    - jobspoints
+    - experience
+    - chatouilles
+    - cle
+    - cles
+    - clef
+    - clefs
+    - cheque
+    - cheques
+    - grade
+    - grades
+    - vip
+    - vipelite
+    - elixir
+    - elixirs
+    - fiole
+    - fioles
+    - spawner
+    - spawners
+    - generateur
+    - generateurs
+    - rune
+    - runes
+    - enchantement
+    - enchantements
+    - parchemin
+    - voucher
+    - boost
+    - boosts
+    - druse
+    - druses
+    - classificateur
+  morceaux:
+    - shcoin
+    - banque d ile
+    - temps de jeu
+    - niv d ile
+    - niveau de metiers
+    - niv network
+    - mini jeux
+    - luckyblock
+    - sellstick
+    - auto break
+    - poussiere magique
+    - force ii
+    - vitesse ii
+    - resistance ii
+    - absorption ii
+    - regeneration iii
+    - saut ameliore
+  exceptions: []
 # Items qui ne peuvent pas être renommés (spawners, têtes...)
 items-interdits:
   - NAME_TAG

@@ -42,7 +42,8 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
     private static final Pattern HEX = Pattern.compile("&#([0-9a-fA-F]{6})");
 
     /** Réglages lus une fois par chargement (le clic droit et le contrôle d'un nom ne relisent pas la config). */
-    record Settings(String cancelWord, int maxLength, BannedWords bannedWords, Set<Material> bannedItems,
+    record Settings(String cancelWord, int maxLength, BannedWords bannedWords, BannedWords imitations, String reservedChars,
+                    Set<Material> bannedItems,
                     Material tagMaterial, boolean dialogs, int minProtocol) {
     }
 
@@ -104,6 +105,9 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
             config.getString("mot-annulation", "annuler"),
             config.getInt("longueur-max", 45),
             words,
+            new BannedWords(config.getStringList("imitations.mots"), config.getStringList("imitations.morceaux"),
+                config.getStringList("imitations.exceptions")),
+            config.getString("imitations.caracteres", ""),
             items,
             tag == null ? Material.NAME_TAG : tag,
             config.getBoolean("dialogues.actif", true),

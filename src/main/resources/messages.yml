@@ -39,6 +39,8 @@ dialogue:
   vide: '&c✖ Écris un nom dans le champ.'
   # %mot% : le mot trouvé, tel que le filtre le lit (sans accents ni chiffres)
   mot-interdit: '&c✖ Refusé : « %mot% » est interdit dans un nom.'
+  # %mot% : le texte ou le caractère qui imite le serveur
+  imitation: '&c✖ Refusé : « %mot% » imite un objet ou un texte du serveur.'
   # %length% : longueur du nom, %max% : longueur-max
   trop-long: '&c✖ Refusé : nom trop long (%length%/%max%, codes couleur compris).'
   disparu: '&c✖ L''item n''est plus à sa place dans ton inventaire.'
@@ -58,6 +60,7 @@ annulation-info: '&7&l« &6&lSH &8&l» &7Tapez &b%cancel_word% &7pour annuler.'
 annule: '&7&l« &c&lSH &8&l» &cRenommage annulé, ton Nametag n''a pas été utilisé.'
 deja-en-cours: '&7&l« &c&lSH &8&l» &cÉcris d''abord le nom dans le chat, ou &b%cancel_word% &cpour annuler.'
 mot-interdit: '&7&l« &c&lSH &8&l» &cVous ne pouvez pas utiliser ce nom.'
+imitation: '&7&l« &c&lSH &8&l» &c« %mot% » imite un objet ou un texte du serveur, choisis un autre nom.'
 trop-long: '&7&l« &c&lSH &8&l» &cNom trop long (%length%/%max%, codes couleur compris).'
 vide: '&7&l« &c&lSH &8&l» &cÉcris un nom.'
 disparu: '&7&l« &c&lSH &8&l» &cL''item n''est plus à sa place dans ton inventaire, renommage annulé.'
