@@ -38,7 +38,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,7 +76,11 @@ final class RenameFlow implements Listener {
     }
 
     /** Résultat du contrôle d'un nom : name est le nom coloré, reason la clé du message de refus (null si accepté). */
-    private record Verdict(String name, String reason, int length) {
+    private record Verdict(String name, String reason, int length, String word) {
+        Verdict(String name, String reason, int length) {
+            this(name, reason, length, "");
+        }
+
         boolean ok() {
             return reason == null;
         }
@@ -308,10 +311,9 @@ final class RenameFlow implements Listener {
             } else {
                 shownName = preview.effectiveName();
             }
-            body.add(DialogBody.item(preview)
-                .description(DialogBody.plainMessage(shownName, WIDTH - 40))
-                .showTooltip(true)
-                .build());
+            // nom au-dessus, item seul dessous : une description d'item s'affiche à côté de l'icône, donc décentrée
+            body.add(DialogBody.plainMessage(shownName, WIDTH));
+            body.add(DialogBody.item(preview).showTooltip(true).build());
             String status;
             if (verdict == null) {
                 status = plugin.raw("dialogue.aide");
@@ -320,7 +322,8 @@ final class RenameFlow implements Listener {
             } else {
                 status = plugin.raw("dialogue." + verdict.reason())
                     .replace("%length%", String.valueOf(verdict.length()))
-                    .replace("%max%", String.valueOf(settings.maxLength()));
+                    .replace("%max%", String.valueOf(settings.maxLength()))
+                    .replace("%mot%", verdict.word());
             }
             body.add(DialogBody.plainMessage(component(status), WIDTH));
             for (String line : plugin.rawList("dialogue.couleurs")) {
@@ -350,10 +353,9 @@ final class RenameFlow implements Listener {
                 .width(BUTTON_WIDTH)
                 .action(DialogBlindness.closeAction())
                 .build();
-            DialogBase base = DialogBase.builder(Component.empty())
+            DialogBase base = DialogBlindness.stayOpen(DialogBase.builder(Component.empty()))
                 .canCloseWithEscape(true)
-                // CLOSE : le client ne retire pas son écran d'attente quand le serveur ferme un dialogue
-                .afterAction(DialogBase.DialogAfterAction.CLOSE)
+                // gardé ouvert au clic : le dialogue suivant (erreur, écran d'après) le remplace sans clignoter, sinon il est fermé
                 .body(body)
                 .inputs(List.of(input))
                 .build();
@@ -383,11 +385,13 @@ final class RenameFlow implements Listener {
             reopen(player, target, typed, verdict);
             return;
         }
+        blindness.close(player);
         apply(player, item, verdict.name());
     }
 
     private void reopen(Player player, Target target, String typed, Verdict verdict) {
         if (!showDialog(player, target, typed, verdict)) {
+            blindness.close(player);
             plugin.msg(player, "erreur-dialogue");
         }
     }
@@ -434,7 +438,7 @@ final class RenameFlow implements Listener {
         Verdict verdict = check(item, text);
         if (!verdict.ok()) {
             plugin.msg(player, verdict.reason(), "%length%", String.valueOf(verdict.length()),
-                "%max%", String.valueOf(plugin.settings().maxLength()));
+                "%max%", String.valueOf(plugin.settings().maxLength()), "%mot%", verdict.word());
             return;
         }
         chatTargets.remove(player.getUniqueId());
@@ -472,10 +476,10 @@ final class RenameFlow implements Listener {
         if (plain.isEmpty()) {
             return new Verdict("", "vide", 0);
         }
-        String lower = plain.toLowerCase(Locale.ROOT);
         SHItemTags.Settings settings = plugin.settings();
-        if (settings.bannedWords().stream().anyMatch(lower::contains)) {
-            return new Verdict(name, "mot-interdit", name.length());
+        String banned = settings.bannedWords().find(plain);
+        if (banned != null) {
+            return new Verdict(name, "mot-interdit", name.length(), banned);
         }
         if (name.length() > settings.maxLength()) {
             return new Verdict(name, "trop-long", name.length());

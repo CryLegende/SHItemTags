@@ -37,7 +37,8 @@ dialogue:
   # Résultat d'un « Aperçu » ou d'un « Renommer » refusé
   accepte: '&a✔ Nom accepté, clique sur Renommer.'
   vide: '&c✖ Écris un nom dans le champ.'
-  mot-interdit: '&c✖ Refusé : ce nom contient un mot interdit.'
+  # %mot% : le mot trouvé, tel que le filtre le lit (sans accents ni chiffres)
+  mot-interdit: '&c✖ Refusé : « %mot% » est interdit dans un nom.'
   # %length% : longueur du nom, %max% : longueur-max
   trop-long: '&c✖ Refusé : nom trop long (%length%/%max%, codes couleur compris).'
   disparu: '&c✖ L''item n''est plus à sa place dans ton inventaire.'

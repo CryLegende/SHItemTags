@@ -27,9 +27,150 @@
 mot-annulation: annuler
 # Longueur maximale du nom, codes couleur compris (&a compte 2, &#rrggbb compte 14)
 longueur-max: 45
+# Mots refusés dans un nom. Tout est comparé après normalisation : minuscules, sans accents, chiffres et
+# symboles collés à une lettre lus comme des lettres (s@l0pe, m3rde), suites de 3 lettres identiques ou plus
+# réduites à une (meeerde), lettres isolées regroupées (f d p, f.u.c.k). On écrit donc les mots simplement.
 mots-interdits:
-  - fuck
-  - bitch
+  # Trouvés seulement entiers : « con » ne touche ni « flacon » ni « second ».
+  mots:
+    - merde
+    - merdes
+    - merdique
+    - merdeux
+    - merdeuse
+    - emmerde
+    - emmerdeur
+    - putain
+    - putains
+    - ptn
+    - bordel
+    - chier
+    - foutre
+    - cul
+    - bite
+    - bites
+    - couille
+    - couilles
+    - nique
+    - niquer
+    - nik
+    - branler
+    - branlette
+    - con
+    - cons
+    - conne
+    - connes
+    - batard
+    - batards
+    - batarde
+    - salaud
+    - salauds
+    - salopard
+    - connerie
+    - conneries
+    - pute
+    - putes
+    - pouffiasse
+    - petasse
+    - grognasse
+    - enfoire
+    - enfoiree
+    - raclure
+    - suceur
+    - suceuse
+    - pd
+    - pede
+    - pedes
+    - tapette
+    - tafiole
+    - fiotte
+    - gouine
+    - trouduc
+    - fdp
+    - fdt
+    - ntm
+    - nsm
+    - tmr
+    - tg
+    - tgl
+    - ftg
+    - slp
+    - tagueule
+    - fuck
+    - fucking
+    - fucked
+    - fck
+    - shit
+    - bitch
+    - bitches
+    - pussy
+    - dick
+    - cock
+    - cunt
+    - asshole
+    - motherfucker
+    - nigga
+    - niggas
+    - nigger
+    - niggers
+    - negre
+    - negres
+    - negresse
+    - negro
+    - bougnoule
+    - bougnoules
+    - youpin
+    - youpins
+    - bicot
+    - chintok
+    - pedo
+    - pedophile
+    - viol
+    - violer
+    - violeur
+    - porn
+    - porno
+    - sexe
+    - hentai
+    - nazi
+    - nazis
+    - hitler
+    - heil
+    - kys
+  # Cherchés partout, même collés à d'autres mots (« GrosConnard », « filsdepute »). N'y mettre que des
+  # suites qu'aucun mot correct ne contient (pas « pute » : député, réputé).
+  morceaux:
+    - connard
+    - connasse
+    - conasse
+    - encule
+    - enculer
+    - salope
+    - filsdepute
+    - fdp
+    - ftg
+    - tagueule
+    - tamere
+    - niquetamere
+    - fuck
+    - bitch
+    - motherfucker
+    - nigger
+    - nigga
+    - bougnoule
+    - youpin
+    - pedophile
+    - hitler
+    - siegheil
+    - porno
+  # Expressions jamais refusées, retirées du nom avant la recherche.
+  exceptions:
+    - pique nique
+    - pique niquer
+    - cul de sac
+    - cul sec
+    - cul de poule
+    - chili con carne
 # Items qui ne peuvent pas être renommés (spawners, têtes...)
 items-interdits:
   - NAME_TAG

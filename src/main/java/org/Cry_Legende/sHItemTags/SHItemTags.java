@@ -42,7 +42,7 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
     private static final Pattern HEX = Pattern.compile("&#([0-9a-fA-F]{6})");
 
     /** Réglages lus une fois par chargement (le clic droit et le contrôle d'un nom ne relisent pas la config). */
-    record Settings(String cancelWord, int maxLength, List<String> bannedWords, Set<Material> bannedItems,
+    record Settings(String cancelWord, int maxLength, BannedWords bannedWords, Set<Material> bannedItems,
                     Material tagMaterial, boolean dialogs, int minProtocol) {
     }
 
@@ -94,10 +94,11 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
                 items.add(material);
             }
         }
-        List<String> words = config.getStringList("mots-interdits").stream()
-            .map(w -> w.toLowerCase(Locale.ROOT).strip())
-            .filter(w -> !w.isEmpty())
-            .toList();
+        BannedWords words = config.isList("mots-interdits")
+            // ancien format (simple liste) : chaque mot est cherché partout, comme avant
+            ? new BannedWords(List.of(), config.getStringList("mots-interdits"), List.of())
+            : new BannedWords(config.getStringList("mots-interdits.mots"), config.getStringList("mots-interdits.morceaux"),
+                config.getStringList("mots-interdits.exceptions"));
         Material tag = Material.matchMaterial(config.getString("tag.materiau", "NAME_TAG"));
         return new Settings(
             config.getString("mot-annulation", "annuler"),
