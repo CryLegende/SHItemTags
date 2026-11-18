@@ -29,10 +29,14 @@ Utilisé sur : **Opale**.
 
 Le Nametag n'est retiré qu'à la réussite du renommage. Fermer le menu rend l'item posé. Les clients sans dialogues (avant 1.21.6, lus avec ViaVersion) écrivent le nom dans le chat après avoir validé l'item.
 
+## Journal
+
+Avec SHLogs, dans `plugins/SHLogs/SHItemTags/<mois>/` (sans SHLogs, la console) : `renommages` (ancien et nouveau nom, en clair et en codes &), `refus` (« Renommer » refusé pour un mot interdit ou une imitation), `dons` (`give` et `giveall`). Fichiers dans `config.yml` › `journal`, textes dans `messages.yml` › `journal`.
+
 ## Dépendances
 
 - Obligatoires : `NBTAPI`
-- Facultatives : `ViaVersion` (repérer les clients sans dialogues)
+- Facultatives : `ViaVersion` (repérer les clients sans dialogues), `SHLogs` (journal)
 
 ## Commandes
 

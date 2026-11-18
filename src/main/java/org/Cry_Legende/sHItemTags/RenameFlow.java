@@ -382,11 +382,12 @@ final class RenameFlow implements Listener {
             verdict = new Verdict(verdict.name(), "plus-de-tag", 0);
         }
         if (!verdict.ok()) {
+            logRefusal(player, target.snapshot(), verdict);
             reopen(player, target, typed, verdict);
             return;
         }
         blindness.close(player);
-        apply(player, item, verdict.name());
+        apply(player, item, verdict.name(), "dialogue");
     }
 
     private void reopen(Player player, Target target, String typed, Verdict verdict) {
@@ -437,6 +438,7 @@ final class RenameFlow implements Listener {
         // En cas de refus le joueur reste en attente et peut réessayer (ou annuler)
         Verdict verdict = check(item, text);
         if (!verdict.ok()) {
+            logRefusal(player, item, verdict);
             plugin.msg(player, verdict.reason(), "%length%", String.valueOf(verdict.length()),
                 "%max%", String.valueOf(plugin.settings().maxLength()), "%mot%", verdict.word());
             return;
@@ -446,7 +448,7 @@ final class RenameFlow implements Listener {
             plugin.msg(player, "plus-de-tag");
             return;
         }
-        apply(player, item, verdict.name());
+        apply(player, item, verdict.name(), "chat");
     }
 
     @EventHandler
@@ -531,12 +533,41 @@ final class RenameFlow implements Listener {
         return true;
     }
 
-    private void apply(Player player, ItemStack item, String name) {
+    private void apply(Player player, ItemStack item, String name, String via) {
         ItemMeta meta = item.getItemMeta();
+        plugin.log("renommages", "journal.renomme", "%joueur%", player.getName(), "%item%", describe(item),
+            "%ancien%", meta.hasDisplayName() ? ChatColor.stripColor(meta.getDisplayName()) : plugin.raw("journal.sans-nom"),
+            "%nouveau%", ChatColor.stripColor(name), "%code%", ampCodes(name), "%via%", via);
         meta.setDisplayName(name);
         item.setItemMeta(meta);
         plugin.msg(player, "renomme", "%name%", name);
         player.playSound(player.getLocation(), Sound.BLOCK_ENCHANTMENT_TABLE_USE, 0.8f, 1.2f);
+    }
+
+    /** Refus d'un nom interdit ou d'une imitation au moment de renommer (pas à l'aperçu) : utile à la modération. */
+    private void logRefusal(Player player, ItemStack item, Verdict verdict) {
+        if (!"mot-interdit".equals(verdict.reason()) && !"imitation".equals(verdict.reason())) {
+            return;
+        }
+        plugin.log("refus", "journal.refuse", "%joueur%", player.getName(), "%item%", describe(item),
+            "%raison%", plugin.raw("journal.raisons." + verdict.reason()), "%mot%", verdict.word(),
+            "%nom%", ChatColor.stripColor(verdict.name()));
+    }
+
+    /** « 1x diamond_sword » */
+    private static String describe(ItemStack item) {
+        return item.getAmount() + "x " + item.getType().getKey().getKey();
+    }
+
+    /** Nom en codes & (§x§r§r§g§g§b§b -> &#rrggbb), pour le champ du dialogue et le journal. */
+    private static String ampCodes(String legacy) {
+        Matcher m = HEX_LEGACY.matcher(legacy);
+        StringBuilder sb = new StringBuilder();
+        while (m.find()) {
+            m.appendReplacement(sb, Matcher.quoteReplacement("&#" + m.group(1).replace("§", "")));
+        }
+        m.appendTail(sb);
+        return sb.toString().replace('§', '&');
     }
 
     // ------------------------------------------------------------------ utilitaires
@@ -544,16 +575,7 @@ final class RenameFlow implements Listener {
     /** Nom actuel de l'item en codes & (pour le modifier au lieu de tout réécrire), vide sans nom personnalisé. */
     private static String currentName(ItemStack item) {
         ItemMeta meta = item.getItemMeta();
-        if (meta == null || !meta.hasDisplayName()) {
-            return "";
-        }
-        Matcher m = HEX_LEGACY.matcher(meta.getDisplayName());
-        StringBuilder sb = new StringBuilder();
-        while (m.find()) {
-            m.appendReplacement(sb, Matcher.quoteReplacement("&#" + m.group(1).replace("§", "")));
-        }
-        m.appendTail(sb);
-        return sb.toString().replace('§', '&');
+        return meta == null || !meta.hasDisplayName() ? "" : ampCodes(meta.getDisplayName());
     }
 
     static Component component(String text) {

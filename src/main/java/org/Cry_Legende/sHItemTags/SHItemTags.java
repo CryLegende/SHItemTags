@@ -107,7 +107,7 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
             words,
             new BannedWords(config.getStringList("imitations.mots"), config.getStringList("imitations.morceaux"),
                 config.getStringList("imitations.exceptions")),
-            config.getString("imitations.caracteres", ""),
+            java.util.Objects.requireNonNullElse(config.getString("imitations.caracteres"), ""),
             items,
             tag == null ? Material.NAME_TAG : tag,
             config.getBoolean("dialogues.actif", true),
@@ -195,6 +195,8 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
             for (Player player : Bukkit.getOnlinePlayers()) {
                 give(player, createTag(amount));
             }
+            log("dons", "journal.donne-a-tous", "%source%", sender.getName(), "%nombre%", String.valueOf(amount),
+                "%joueurs%", String.valueOf(Bukkit.getOnlinePlayers().size()));
             msg(sender, "donne-a-tous", "%amount%", String.valueOf(amount));
             return true;
         }
@@ -204,6 +206,7 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
             return true;
         }
         give(target, createTag(amount));
+        log("dons", "journal.donne", "%source%", sender.getName(), "%nombre%", String.valueOf(amount), "%joueur%", target.getName());
         if (sender instanceof Player) {
             msg(sender, "donne", "%amount%", String.valueOf(amount), "%player%", target.getName());
         }
@@ -314,6 +317,24 @@ public class SHItemTags extends JavaPlugin implements CommandExecutor, TabComple
     }
 
     // ------------------------------------------------------------------ utilitaires
+
+    /**
+     * Ligne de journal SHLogs : fichier lu dans config.yml › journal (vide = pas de ligne), texte dans messages.yml › journal,
+     * sans codes couleur.
+     */
+    void log(String fileKey, String messageKey, String... replacements) {
+        // un seul argument : lit aussi la valeur du jar quand la section manque (config d'avant le journal)
+        String file = getConfig().getString("journal." + fileKey);
+        // couleurs retirées du texte avant les variables : un nom en codes & (%code%) reste lisible
+        String text = ChatColor.stripColor(color(raw(messageKey)));
+        if (file == null || file.isEmpty() || text.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i + 1 < replacements.length; i += 2) {
+            text = text.replace(replacements[i], replacements[i + 1]);
+        }
+        ActionLog.write(this, file, text);
+    }
 
     void give(Player player, ItemStack item) {
         for (ItemStack left : player.getInventory().addItem(item).values()) {

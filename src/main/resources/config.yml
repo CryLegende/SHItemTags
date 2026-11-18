@@ -247,6 +247,15 @@ dialogues:
 # clique un bouton (ou Échap), sinon dès qu'il tourne la caméra, se déplace ou ouvre un inventaire.
 aveugler-pendant-dialogues: true
 
+# Journal SHLogs (plugins/SHLogs/SHItemTags/<mois>/<fichier>.yml) ; sans SHLogs, la console. Vide = pas de ligne.
+journal:
+  # Items renommés (ancien et nouveau nom).
+  renommages: renommages
+  # « Renommer » refusé pour un mot interdit ou une imitation (pas les aperçus).
+  refus: refus
+  # Nametags donnés par /shitemtags give et giveall (SHCrates compris).
+  dons: dons
+
 tag:
   materiau: NAME_TAG
   nom: '&dNametag Enchanté'

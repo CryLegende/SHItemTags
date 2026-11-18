@@ -54,6 +54,19 @@ dialogue:
   bouton-apercu-info: '&7Montre l''item avec ce nom, sans rien utiliser'
   bouton-annuler: '&7Annuler'
 
+# ---- Journal SHLogs (une ligne « Joueur -> action (détails) », couleurs retirées)
+journal:
+  # %item% : « 1x diamond_sword », %code% : nouveau nom en codes &, %via% : dialogue ou chat
+  renomme: '%joueur% -> renomme %item% : « %ancien% » en « %nouveau% » (%code%, %via%)'
+  sans-nom: 'sans nom'
+  # %raison% : texte de journal.raisons, %mot% : le mot trouvé
+  refuse: '%joueur% -> renommage refusé sur %item% : %raison% « %mot% » dans « %nom% »'
+  raisons:
+    mot-interdit: 'mot interdit'
+    imitation: 'imitation'
+  donne: '%source% -> donne %nombre% Nametag(s) à %joueur%'
+  donne-a-tous: '%source% -> donne %nombre% Nametag(s) à tous les joueurs (%joueurs% en ligne)'
+
 # ---- Chat (clients sans dialogues) et messages communs
 demande: "&r &r\n&7&l« &6&lSH &8&l» &fÉcris le nouveau nom de l'item dans le chat."
 annulation-info: '&7&l« &6&lSH &8&l» &7Tapez &b%cancel_word% &7pour annuler.'
